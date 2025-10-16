@@ -25,3 +25,9 @@ mybatis-plus:
       logic-delete-field: isDeleted
 #      logic-delete-value: 1
 #      logic-not-delete-value: 0
+
+minio:
+  endpoint: http://192.168.6.101:9000
+  accessKey: liuyuwei
+  secretKey: liuyuwei
+  bucketName: lease
