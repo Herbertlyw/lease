@@ -31,3 +31,6 @@ minio:
   accessKey: liuyuwei
   secretKey: liuyuwei
   bucketName: lease
+
+springdoc:
+  default-flat-param-object: true
