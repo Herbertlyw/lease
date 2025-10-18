@@ -1,5 +1,6 @@
 package com.atguigu.lease.web.admin.mapper;
 
+import com.atguigu.lease.model.entity.LeaseTerm;
 import com.atguigu.lease.model.entity.PaymentType;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -12,6 +13,7 @@ import java.util.List;
  * @Entity com.atguigu.lease.model.PaymentType
  */
 public interface PaymentTypeMapper extends BaseMapper<PaymentType> {
+    List<PaymentType> selectListByRoomId(Long id);
 
 }
 

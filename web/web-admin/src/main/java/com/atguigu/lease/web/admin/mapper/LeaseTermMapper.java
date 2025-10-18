@@ -12,7 +12,7 @@ import java.util.List;
 * @Entity com.atguigu.lease.model.LeaseTerm
 */
 public interface LeaseTermMapper extends BaseMapper<LeaseTerm> {
-
+    List<LeaseTerm> selectListByRoomId(Long id);
 }
 
 

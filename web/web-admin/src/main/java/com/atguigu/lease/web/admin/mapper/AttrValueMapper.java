@@ -13,6 +13,7 @@ import java.util.List;
 * @Entity com.atguigu.lease.model.AttrValue
 */
 public interface AttrValueMapper extends BaseMapper<AttrValue> {
+    List<AttrValueVo> selectListByRoomId(Long id);
 
 }
 
