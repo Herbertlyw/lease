@@ -152,7 +152,7 @@ public class ApartmentInfoServiceImpl extends ServiceImpl<ApartmentInfoMapper, A
         ApartmentInfo apartmentInfo = this.getById(id);
         //2.查询公寓图片列表
 //        List<GraphInfo> graphInfoList = graphInfoService.list(new LambdaQueryWrapper<GraphInfo>().eq(GraphInfo::getItemId, id).eq(GraphInfo::getItemType, ItemType.APARTMENT));
-        List<GraphVo> graphVoList= graphInfoMapper.selectListByItemIdAndItemType(ItemType.APARTMENT,id);
+        List<GraphVo> graphVoList= graphInfoMapper.selectListByItemTypeAndId(ItemType.APARTMENT,id);
 
         //公寓标签列表
        List<LabelInfo> labelInfoList= labelInfoMapper.selectListByApartmentId( id);
