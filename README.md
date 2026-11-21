@@ -13,7 +13,14 @@ docker compose up -d --wait
 
 Compose 会启动 MySQL 8 和 Redis 6.2，在新数据卷中执行 `db/01-schema.sql` 和 `db/02-demo.sql`。种子数据包含杭州的「青禾公寓」、两间已发布的房间、一间草稿房和一个演示管理员。已有卷会沿用原数据；日常停止服务使用 `docker compose stop`。
 
-在两个终端分别启动后台和租客端：
+如果 Docker Desktop 的虚拟磁盘已满，而宿主机仍有空间，可在首次初始化时将 MySQL 放在宿主机目录。请从仓库根目录运行，示例使用新的空目录：
+
+```sh
+mkdir -p .local/mysql
+LEASE_MYSQL_DATA="$(pwd)/.local/mysql" docker compose up -d --wait
+```
+
+复用该数据时继续设置相同的 `LEASE_MYSQL_DATA`。在两个终端分别启动后台和租客端：
 
 ```sh
 java -jar web/web-admin/target/web-admin-1.0-SNAPSHOT.jar
