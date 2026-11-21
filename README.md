@@ -64,3 +64,5 @@ java -jar web/web-app/target/web-app-1.0-SNAPSHOT.jar --spring.profiles.active=d
 `model` 对应 28 张表和业务枚举；`common` 集中管理返回值、持久层和可选基础设施；`web/web-admin` 与 `web/web-app` 分别承载管理员和租客 API。房源详情直接从数据库读取，后台下架后立即生效。验证码单次消费，租客的预约和租约更新均校验归属及原状态。
 
 `mvn clean verify` 使用独立的内存数据库验证到期租约的状态更新，不需要启动演示库。端到端验收可按上面的五步使用 MySQL、Redis 和两个实际服务执行。
+
+GitHub Actions 会在全新的 Compose 数据库上执行 `tests/smoke_demo.py`，覆盖上下架、预约、后台确认、签约、续约和跨账号隔离。该脚本会创建测试账号、预约和租约，适合运行在专用演示库。
