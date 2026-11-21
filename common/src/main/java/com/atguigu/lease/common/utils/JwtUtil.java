@@ -11,7 +11,13 @@ import java.util.Date;
 public class JwtUtil {
 
     private static long tokenExpiration = 60 * 60 * 1000L;
-    private static SecretKey tokenSignKey = Keys.hmacShaKeyFor("M0PKAI6pYGVWWfDZw90a0lTpGYX1d4AQ".getBytes());
+    private static final SecretKey tokenSignKey = signingKey();
+
+    private static SecretKey signingKey() {
+        String configured = System.getenv("LEASE_JWT_KEY");
+        return configured == null ? Keys.secretKeyFor(SignatureAlgorithm.HS256)
+                : Keys.hmacShaKeyFor(java.util.Base64.getDecoder().decode(configured));
+    }
 
     public static String createToken(Long userId, String username) {
         String token = Jwts.builder().
@@ -42,8 +48,4 @@ public class JwtUtil {
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println(createToken(2L, "user"));
-
-    }
 }

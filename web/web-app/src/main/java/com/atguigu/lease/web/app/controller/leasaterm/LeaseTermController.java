@@ -1,5 +1,7 @@
 package com.atguigu.lease.web.app.controller.leasaterm;
 
+import com.atguigu.lease.web.app.mapper.LeaseTermMapper;
+import lombok.RequiredArgsConstructor;
 import com.atguigu.lease.common.result.Result;
 import com.atguigu.lease.model.entity.LeaseTerm;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,11 +16,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/app/term/")
 @Tag(name = "租期信息")
+@RequiredArgsConstructor
 public class LeaseTermController {
+    private final LeaseTermMapper mapper;
+
 
     @GetMapping("listByRoomId")
     @Operation(summary = "根据房间id获取可选获取租期列表")
     public Result<List<LeaseTerm>> list(@RequestParam Long id) {
-        return Result.ok();
+        return Result.ok(mapper.selectListByRoomId(id));
     }
 }

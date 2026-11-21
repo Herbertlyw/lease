@@ -11,4 +11,40 @@
           and is_release = 1
           and apartment_id = #{id}
     </select>
+    <resultMap id="item" type="com.atguigu.lease.web.app.vo.room.RoomItemVo" autoMapping="true">
+        <id property="id" column="id"/>
+        <association property="apartmentInfo" javaType="com.atguigu.lease.model.entity.ApartmentInfo" columnPrefix="apt_" autoMapping="true">
+            <id property="id" column="id"/>
+        </association>
+        <collection property="graphVoList" column="id" select="roomImages"/>
+        <collection property="labelInfoList" column="id" select="com.atguigu.lease.web.app.mapper.LabelInfoMapper.selectListByRoomId"/>
+    </resultMap>
+
+    <select id="roomImages" resultType="com.atguigu.lease.web.app.vo.graph.GraphVo">
+        SELECT name,url FROM graph_info WHERE item_type=2 AND item_id=#{id} AND is_deleted=0 ORDER BY id
+    </select>
+
+    <select id="pageItems" resultMap="item">
+        SELECT r.id, r.room_number, r.rent, a.id apt_id, a.name apt_name, a.address_detail apt_address_detail,
+               a.city_id apt_city_id, a.district_id apt_district_id, a.province_id apt_province_id,
+               a.city_name apt_city_name, a.province_name apt_province_name, a.district_name apt_district_name
+        FROM room_info r JOIN apartment_info a ON a.id=r.apartment_id
+        WHERE r.is_deleted=0 AND a.is_deleted=0 AND r.is_release=1 AND a.is_release=1
+        <if test="apartmentId != null">AND a.id=#{apartmentId}</if>
+        <if test="query.provinceId != null">AND a.province_id=#{query.provinceId}</if>
+        <if test="query.cityId != null">AND a.city_id=#{query.cityId}</if>
+        <if test="query.districtId != null">AND a.district_id=#{query.districtId}</if>
+        <if test="query.minRent != null">AND r.rent &gt;= #{query.minRent}</if>
+        <if test="query.maxRent != null">AND r.rent &lt;= #{query.maxRent}</if>
+        <if test="query.paymentTypeId != null">
+            AND EXISTS (SELECT 1 FROM room_payment_type p WHERE p.room_id=r.id
+                        AND p.payment_type_id=#{query.paymentTypeId} AND p.is_deleted=0)
+        </if>
+        ORDER BY
+        <choose>
+            <when test="query.orderType == 'desc'">r.rent DESC,</when>
+            <when test="query.orderType == 'asc'">r.rent ASC,</when>
+        </choose>
+        r.id
+    </select>
 </mapper>

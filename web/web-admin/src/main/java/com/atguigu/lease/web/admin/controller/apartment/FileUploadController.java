@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 @Tag(name = "文件管理")
 @RequestMapping("/admin/file")
 @RestController
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "minio.endpoint")
 public class FileUploadController {
 
     @Autowired

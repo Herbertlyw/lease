@@ -19,6 +19,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ public class ApartmentInfoServiceImpl extends ServiceImpl<ApartmentInfoMapper, A
     private ApartmentFeeValueService apartmentFeeValueService;
 
     @Override
+    @Transactional
     public void saveOrUpdateApartment(ApartmentSubmitVo apartmentSubmitVo) {
         boolean isUpdate = apartmentSubmitVo.getId() != null;
         super.saveOrUpdate(apartmentSubmitVo);
@@ -174,6 +176,7 @@ public class ApartmentInfoServiceImpl extends ServiceImpl<ApartmentInfoMapper, A
     }
 
     @Override
+    @Transactional
     public void removeApartmentById(Long id) {
 
         Long count = roomInfoMapper.selectCount(new LambdaQueryWrapper<RoomInfo>().eq(RoomInfo::getApartmentId, id));

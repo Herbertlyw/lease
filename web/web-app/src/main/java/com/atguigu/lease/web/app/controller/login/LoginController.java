@@ -21,19 +21,21 @@ public class LoginController {
     @GetMapping("login/getCode")
     @Operation(summary = "获取短信验证码")
     public Result getCode(@RequestParam String phone) {
+        loginService.sendCode(phone);
         return Result.ok();
     }
 
     @PostMapping("login")
     @Operation(summary = "登录")
     public Result<String> login(@RequestBody LoginVo loginVo) {
-        return Result.ok();
+        return Result.ok(loginService.login(loginVo));
     }
 
     @GetMapping("info")
     @Operation(summary = "获取登录用户信息")
-    public Result<UserInfoVo> info() {
-        return Result.ok();
+    public Result<UserInfoVo> info(@RequestHeader(value="access-token", required=false) String token) {
+        var user = loginService.requireUser(token);
+        return Result.ok(new UserInfoVo(user.getNickname(), user.getAvatarUrl()));
     }
 }
 

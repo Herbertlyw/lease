@@ -3,41 +3,59 @@ package com.atguigu.lease.web.app.controller.agreement;
 import com.atguigu.lease.common.result.Result;
 import com.atguigu.lease.model.entity.LeaseAgreement;
 import com.atguigu.lease.model.enums.LeaseStatus;
+import com.atguigu.lease.web.app.mapper.LeaseAgreementMapper;
+import com.atguigu.lease.web.app.service.LeaseAgreementService;
+import com.atguigu.lease.web.app.service.LoginService;
 import com.atguigu.lease.web.app.vo.agreement.AgreementDetailVo;
 import com.atguigu.lease.web.app.vo.agreement.AgreementItemVo;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/app/agreement")
-@Tag(name = "租约信息")
+@RequiredArgsConstructor
 public class LeaseAgreementController {
+    private final LoginService login;
+    private final LeaseAgreementService agreements;
+    private final LeaseAgreementMapper mapper;
 
-    @Operation(summary = "获取个人租约基本信息列表")
-    @GetMapping("listItem")
-    public Result<List<AgreementItemVo>> listItem() {
-        return Result.ok();
+    @GetMapping("/listItem")
+    public Result<List<AgreementItemVo>> list(@RequestHeader(value="access-token", required=false) String token) {
+        return Result.ok(mapper.listForTenant(login.requireUser(token).getPhone()));
     }
 
-    @Operation(summary = "根据id获取租约详细信息")
-    @GetMapping("getDetailById")
-    public Result<AgreementDetailVo> getDetailById(@RequestParam Long id) {
-        return Result.ok();
+    @GetMapping("/getDetailById")
+    public Result<AgreementDetailVo> detail(@RequestHeader(value="access-token", required=false) String token,
+                                            @RequestParam Long id) {
+        var detail = mapper.detailForTenant(id, login.requireUser(token).getPhone());
+        return detail == null ? Result.fail(404, "租约不存在") : Result.ok(detail);
     }
 
-    @Operation(summary = "根据id更新租约状态", description = "用于确认租约和提前退租")
-    @PostMapping("updateStatusById")
-    public Result updateStatusById(@RequestParam Long id, @RequestParam LeaseStatus leaseStatus) {
-        return Result.ok();
+    @PostMapping("/updateStatusById")
+    public Result<Void> update(@RequestHeader(value="access-token", required=false) String token,
+                               @RequestParam Long id, @RequestParam int leaseStatus) {
+        String phone = login.requireUser(token).getPhone();
+        return switch (leaseStatus) {
+            case 2 -> transition(id, phone, LeaseStatus.SIGNING, LeaseStatus.SIGNED);
+            case 3 -> transition(id, phone, LeaseStatus.SIGNING, LeaseStatus.CANCELED);
+            case 5 -> transition(id, phone, LeaseStatus.SIGNED, LeaseStatus.WITHDRAWING);
+            default -> Result.fail(202, "不支持的租客操作");
+        };
     }
 
-    @Operation(summary = "保存或更新租约", description = "用于续约")
-    @PostMapping("saveOrUpdate")
-    public Result saveOrUpdate(@RequestBody LeaseAgreement leaseAgreement) {
-        return Result.ok();
+    @PostMapping("/saveOrUpdate")
+    public Result<Void> renew(@RequestHeader(value="access-token", required=false) String token,
+                              @RequestBody LeaseAgreement request) {
+        String phone = login.requireUser(token).getPhone();
+        if (request.getId() == null) return Result.fail(202, "请选择要续租的原租约");
+        return transition(request.getId(), phone, LeaseStatus.SIGNED, LeaseStatus.RENEWING);
     }
 
+    private Result<Void> transition(Long id, String phone, LeaseStatus current, LeaseStatus target) {
+        boolean updated = agreements.lambdaUpdate().eq(LeaseAgreement::getId, id).eq(LeaseAgreement::getPhone, phone)
+                .eq(LeaseAgreement::getStatus, current).set(LeaseAgreement::getStatus, target).update();
+        return updated ? Result.ok() : Result.fail(409, "租约不存在或状态已变化");
+    }
 }

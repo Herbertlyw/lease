@@ -14,6 +14,8 @@ import com.atguigu.lease.web.admin.vo.system.user.SystemUserInfoVo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wf.captcha.SpecCaptcha;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class LoginServiceImpl implements LoginService {
+
+    private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder();
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -43,11 +47,13 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public String login(LoginVo loginVo) {
 
-        if(loginVo.getCaptchaCode() == null) {
+        if (loginVo.getCaptchaCode() == null || loginVo.getCaptchaKey() == null
+                || !loginVo.getCaptchaKey().startsWith(RedisConstant.ADMIN_LOGIN_PREFIX)
+                || loginVo.getPassword() == null) {
             throw new LeaseException(ResultCodeEnum.ADMIN_CAPTCHA_CODE_NOT_FOUND);
         }
         //校验验证码
-        String code = stringRedisTemplate.opsForValue().get(loginVo.getCaptchaKey());
+        String code = stringRedisTemplate.opsForValue().getAndDelete(loginVo.getCaptchaKey());
         if (code == null) {
             throw new LeaseException(ResultCodeEnum.ADMIN_CAPTCHA_CODE_EXPIRED);}
         if (!code.equals(loginVo.getCaptchaCode().toLowerCase())) {
@@ -65,10 +71,16 @@ public class LoginServiceImpl implements LoginService {
             throw new LeaseException(ResultCodeEnum.ADMIN_ACCOUNT_DISABLED_ERROR);
         }
 
-        if(!systemUser.getPassword().equals(DigestUtils.md5Hex(loginVo.getPassword()))){
+        String hash = systemUser.getPassword();
+        String password = loginVo.getPassword();
+        if (hash != null && hash.matches("[a-fA-F0-9]{32}") && hash.equalsIgnoreCase(DigestUtils.md5Hex(password))) {
+            int migrated = systemUserMapper.update(null, Wrappers.<SystemUser>lambdaUpdate()
+                    .eq(SystemUser::getId, systemUser.getId()).eq(SystemUser::getPassword, hash)
+                    .set(SystemUser::getPassword, passwords.encode(password)));
+            if (migrated == 0) throw new LeaseException(ResultCodeEnum.ADMIN_ACCOUNT_ERROR);
+        } else if (hash == null || !passwords.matches(password, hash)) {
             throw new LeaseException(ResultCodeEnum.ADMIN_ACCOUNT_ERROR);
         }
-
 
         return JwtUtil.createToken(systemUser.getId(),systemUser.getUsername());
     }

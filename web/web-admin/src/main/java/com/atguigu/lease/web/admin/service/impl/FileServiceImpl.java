@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "minio.endpoint")
 public class FileServiceImpl implements FileService {
 
     @Autowired
@@ -54,9 +55,7 @@ public class FileServiceImpl implements FileService {
                             "Effect": "Allow",
                             "Principal": "*",
                             "Action": [
-                                "s3:GetObject",
-                                "s3:PutObject",
-                                "s3:DeleteObject"
+                                "s3:GetObject"
                             ],
                             "Resource": "arn:aws:s3:::%s/*"
                         }

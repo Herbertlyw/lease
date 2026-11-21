@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.atguigu.lease.web.app.mapper.BrowsingHistoryMapper">
-
+    <resultMap id="history" type="com.atguigu.lease.web.app.vo.history.HistoryItemVo" autoMapping="true">
+        <id property="id" column="id"/>
+        <result property="roomId" column="room_id"/>
+        <collection property="roomGraphVoList" column="room_id" select="com.atguigu.lease.web.app.mapper.RoomInfoMapper.roomImages"/>
+    </resultMap>
+    <select id="forUser" resultMap="history">
+        SELECT h.id,h.user_id,h.room_id,h.browse_time,r.room_number,r.rent,a.name apartment_name,a.city_name,a.district_name,a.province_name
+        FROM browsing_history h
+        JOIN room_info r ON r.id=h.room_id AND r.is_deleted=0 AND r.is_release=1
+        JOIN apartment_info a ON a.id=r.apartment_id AND a.is_deleted=0 AND a.is_release=1
+        WHERE h.is_deleted=0 AND h.user_id=#{userId} ORDER BY h.browse_time DESC,h.id DESC
+    </select>
 </mapper>
