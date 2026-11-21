@@ -1,4 +1,4 @@
-"""Exercise admin_token disposable, freshly seeded Compose demo on loopback ports."""
+"""Exercise the tenant and admin APIs against a disposable local Compose database."""
 
 import json
 import os
@@ -18,7 +18,8 @@ def call(port, path, body=None, token=None, method=None, expected_code=200):
         headers=headers,
         method=method,
     )
-    data = json.load(request.urlopen(req, timeout=15))
+    with request.urlopen(req, timeout=15) as response:
+        data = json.load(response)
     assert data["code"] == expected_code, (path, data)
     return data.get("data")
 
