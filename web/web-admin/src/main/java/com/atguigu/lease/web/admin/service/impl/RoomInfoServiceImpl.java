@@ -1,6 +1,5 @@
 package com.atguigu.lease.web.admin.service.impl;
 
-import com.atguigu.lease.common.constant.RedisConstant;
 import com.atguigu.lease.model.entity.*;
 import com.atguigu.lease.model.enums.ItemType;
 import com.atguigu.lease.web.admin.mapper.*;
@@ -18,8 +17,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,8 +73,6 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
     @Autowired
     private LeaseTermMapper leaseTermMapper;
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
     @Override
     public IPage<RoomItemVo> pageRoomItemByQuery(IPage<RoomItemVo> page, RoomQueryVo queryVo) {
         return roomInfoMapper.pageRoomItemByQuery(page, queryVo);
@@ -84,6 +81,7 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
 
 
     @Override
+    @Transactional
     public void saveOrUpdateRoom(RoomSubmitVo roomSubmitVo) {
         boolean isUpdate = roomSubmitVo.getId() != null;
         super.saveOrUpdate(roomSubmitVo);
@@ -121,10 +119,6 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
             LambdaQueryWrapper<RoomLeaseTerm> termQueryWrapper = new LambdaQueryWrapper<>();
             termQueryWrapper.eq(RoomLeaseTerm::getRoomId, roomSubmitVo.getId());
             roomLeaseTermService.remove(termQueryWrapper);
-
-            //删除缓存
-            String key = RedisConstant.APP_ROOM_PREFIX + roomSubmitVo.getId();
-            redisTemplate.delete(key);
         }
 
         //1.保存新的graphInfoList
@@ -240,6 +234,7 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
         return adminRoomDetailVo;
     }
     @Override
+    @Transactional
     public void removeRoomById(Long id) {
         //1.删除RoomInfo
         super.removeById(id);
@@ -274,9 +269,6 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
         LambdaQueryWrapper<RoomLeaseTerm> termQueryWrapper = new LambdaQueryWrapper<>();
         termQueryWrapper.eq(RoomLeaseTerm::getRoomId, id);
         roomLeaseTermService.remove(termQueryWrapper);
-
-        String key = RedisConstant.APP_ROOM_PREFIX + id;
-        redisTemplate.delete(key);
     }
 
 

@@ -1,7 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.atguigu.lease.web.app.mapper.LeaseAgreementMapper">
-
+    <resultMap id="item" type="com.atguigu.lease.web.app.vo.agreement.AgreementItemVo" autoMapping="true">
+        <id property="id" column="id"/>
+        <collection property="roomGraphVoList" column="room_id" select="com.atguigu.lease.web.app.mapper.RoomInfoMapper.roomImages"/>
+    </resultMap>
+    <resultMap id="detail" type="com.atguigu.lease.web.app.vo.agreement.AgreementDetailVo" autoMapping="true">
+        <id property="id" column="id"/>
+        <result property="apartmentId" column="apartment_id"/>
+        <result property="roomId" column="room_id"/>
+        <collection property="roomGraphVoList" column="room_id" select="com.atguigu.lease.web.app.mapper.RoomInfoMapper.roomImages"/>
+        <collection property="apartmentGraphVoList" column="apartment_id" select="apartmentImages"/>
+    </resultMap>
+    <select id="apartmentImages" resultType="com.atguigu.lease.web.app.vo.graph.GraphVo">
+        SELECT name,url FROM graph_info WHERE item_type=1 AND item_id=#{id} AND is_deleted=0 ORDER BY id
+    </select>
+    <sql id="joins">
+        FROM lease_agreement l
+        LEFT JOIN apartment_info a ON a.id=l.apartment_id AND a.is_deleted=0
+        LEFT JOIN room_info r ON r.id=l.room_id AND r.is_deleted=0
+    </sql>
+    <select id="listForTenant" resultMap="item">
+        SELECT l.id,l.room_id,l.status lease_status,l.lease_start_date,l.lease_end_date,l.source_type,l.rent,
+               a.name apartment_name,r.room_number
+        <include refid="joins"/>
+        WHERE l.is_deleted=0 AND l.phone=#{phone} ORDER BY l.id DESC
+    </select>
+    <select id="detailForTenant" resultMap="detail">
+        SELECT l.*, a.name apartment_name,r.room_number,p.name payment_type_name,t.month_count lease_term_month_count,t.unit lease_term_unit
+        <include refid="joins"/>
+        LEFT JOIN payment_type p ON p.id=l.payment_type_id AND p.is_deleted=0
+        LEFT JOIN lease_term t ON t.id=l.lease_term_id AND t.is_deleted=0
+        WHERE l.is_deleted=0 AND l.id=#{id} AND l.phone=#{phone}
+    </select>
 </mapper>

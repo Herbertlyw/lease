@@ -1,6 +1,8 @@
 package com.atguigu.lease.web.app.controller.payment;
 
 
+import com.atguigu.lease.web.app.mapper.PaymentTypeMapper;
+import lombok.RequiredArgsConstructor;
 import com.atguigu.lease.common.result.Result;
 import com.atguigu.lease.model.entity.PaymentType;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,17 +17,20 @@ import java.util.List;
 @Tag(name = "支付方式接口")
 @RestController
 @RequestMapping("/app/payment")
+@RequiredArgsConstructor
 public class PaymentTypeController {
+    private final PaymentTypeMapper mapper;
+
 
     @Operation(summary = "根据房间id获取可选支付方式列表")
     @GetMapping("listByRoomId")
     public Result<List<PaymentType>> list(@RequestParam Long id) {
-        return Result.ok();
+        return Result.ok(mapper.selectListByRoomId(id));
     }
 
     @Operation(summary = "获取全部支付方式列表")
     @GetMapping("list")
     public Result<List<PaymentType>> list() {
-        return Result.ok();
+        return Result.ok(mapper.selectList(null));
     }
 }

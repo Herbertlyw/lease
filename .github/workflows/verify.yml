@@ -1,0 +1,29 @@
+name: Verify
+on:
+  pull_request:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.3.0
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: mvn --batch-mode clean verify
+      - name: Start local demo database and services
+        run: |
+          docker compose up -d --wait
+          java -jar web/web-admin/target/web-admin-1.0-SNAPSHOT.jar > "$RUNNER_TEMP/lease-admin.log" 2>&1 &
+          java -jar web/web-app/target/web-app-1.0-SNAPSHOT.jar --spring.profiles.active=demo > "$RUNNER_TEMP/lease-app.log" 2>&1 &
+          for port in 8080 8081; do
+            curl --retry 30 --retry-all-errors --retry-delay 2 -fsS "http://127.0.0.1:$port/doc.html" -o /dev/null
+          done
+      - run: python3 tests/smoke_demo.py
+      - if: always()
+        run: docker compose down -v

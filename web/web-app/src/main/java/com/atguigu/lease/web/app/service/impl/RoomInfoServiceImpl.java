@@ -1,6 +1,12 @@
 package com.atguigu.lease.web.app.service.impl;
 
-import com.atguigu.lease.common.constant.RedisConstant;
+import com.atguigu.lease.common.exception.LeaseException;
+import com.atguigu.lease.common.result.ResultCodeEnum;
+import com.atguigu.lease.model.enums.ReleaseStatus;
+import com.atguigu.lease.web.app.vo.room.RoomItemVo;
+import com.atguigu.lease.web.app.vo.room.RoomQueryVo;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.atguigu.lease.model.entity.*;
 import com.atguigu.lease.model.enums.ItemType;
 import com.atguigu.lease.web.app.mapper.*;
@@ -15,7 +21,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -49,19 +54,22 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
     @Autowired
     private FeeValueMapper feeValueMapper;
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    @Override
+    public IPage<RoomItemVo> pageItems(long current, long size, RoomQueryVo query, Long apartmentId) {
+        if (current < 1 || size < 1 || size > 100) throw new LeaseException(ResultCodeEnum.PARAM_ERROR);
+        return roomInfoMapper.pageItems(new Page<>(current, size), query, apartmentId);
+    }
+
     @Override
     public RoomDetailVo getDetailById(Long id) {
-        String key = RedisConstant.APP_ROOM_PREFIX + id;
-        RoomDetailVo roomDetailVo = (RoomDetailVo) redisTemplate.opsForValue().get(key);
-        if(roomDetailVo == null){
-
         //1.查询房间信息
         RoomInfo roomInfo = roomInfoMapper.selectById(id);
-        if (roomInfo == null) {
+        if (roomInfo == null || roomInfo.getIsRelease() != ReleaseStatus.RELEASED) {
             return null;
         }
+        ApartmentItemVo apartmentItemVo = apartmentInfoService.selectApartmentItemVoById(roomInfo.getApartmentId());
+        if (apartmentItemVo == null) return null;
+
         //2.查询图片
         List<GraphVo> graphVoList = graphInfoMapper.selectListByItemTypeAndId(ItemType.ROOM, id);
         //3.查询租期
@@ -76,10 +84,7 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
         List<AttrValueVo> attrValueVoList = attrValueMapper.selectListByRoomId(id);
         //8.查询杂费信息
         List<FeeValueVo> feeValueVoList = feeValueMapper.selectListByApartmentId(roomInfo.getApartmentId());
-        //9.查询公寓信息
-        ApartmentItemVo apartmentItemVo = apartmentInfoService.selectApartmentItemVoById(roomInfo.getApartmentId());
-
-       roomDetailVo = new RoomDetailVo();
+        RoomDetailVo roomDetailVo = new RoomDetailVo();
         BeanUtils.copyProperties(roomInfo, roomDetailVo);
 
         roomDetailVo.setApartmentItemVo(apartmentItemVo);
@@ -90,15 +95,6 @@ public class RoomInfoServiceImpl extends ServiceImpl<RoomInfoMapper, RoomInfo>
         roomDetailVo.setPaymentTypeList(paymentTypeList);
         roomDetailVo.setFeeValueVoList(feeValueVoList);
         roomDetailVo.setLeaseTermList(leaseTermList);
-        System.out.println(Thread.currentThread().getName());
-
-        redisTemplate.opsForValue().set(key, roomDetailVo);
-        }
-
         return roomDetailVo;
     }
 }
-
-
-
-

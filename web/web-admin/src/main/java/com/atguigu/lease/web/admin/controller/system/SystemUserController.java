@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/admin/system/user")
 public class SystemUserController {
+
+    private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder();
 
     @Autowired
     private SystemUserService service;
@@ -46,8 +48,12 @@ public class SystemUserController {
     @PostMapping("saveOrUpdate")
     public Result saveOrUpdate(@RequestBody SystemUser systemUser) {
 
-        if (systemUser.getId() == null) {
-            systemUser.setPassword(DigestUtils.md5Hex(systemUser.getPassword()));
+        if (systemUser.getPassword() != null && !systemUser.getPassword().isBlank()) {
+            systemUser.setPassword(passwords.encode(systemUser.getPassword()));
+        } else if (systemUser.getId() == null) {
+            return Result.fail(202, "请输入初始密码");
+        } else {
+            systemUser.setPassword(null);
         }
         service.saveOrUpdate(systemUser);
         return Result.ok();

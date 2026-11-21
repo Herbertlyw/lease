@@ -11,7 +11,7 @@ import com.atguigu.lease.web.app.service.ApartmentInfoService;
 import com.atguigu.lease.web.app.vo.apartment.ApartmentItemVo;
 import com.atguigu.lease.web.app.vo.graph.GraphVo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.checkerframework.checker.units.qual.A;
+import com.atguigu.lease.model.enums.ReleaseStatus;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,6 +42,7 @@ public class ApartmentInfoServiceImpl extends ServiceImpl<ApartmentInfoMapper, A
     public ApartmentItemVo selectApartmentItemVoById(Long id) {
 
         ApartmentInfo apartmentInfo = apartmentInfoMapper.selectById(id);
+        if (apartmentInfo == null || apartmentInfo.getIsRelease() != ReleaseStatus.RELEASED) return null;
 
         List<LabelInfo> labelInfoList = labelInfoMapper.selectListByApartmentId(id);
 
